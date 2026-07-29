@@ -8513,10 +8513,10 @@ mind shield
 noted mind shield
 mind helmet
 noted mind helmet
-desert goat horn
+goat horn
 goat horn dust
 noted goat horn dust
-noted desert goat horn
+noted goat horn
 combat potion(4)
 noted combat potion(4)
 combat potion(3)
@@ -17520,7 +17520,7 @@ echo ahrim's robeskirt
 echo ahrim's ornament kit
 echo home teleport scroll
 raging echoes death scroll
-raging echoes npc contact scroll
+raging echoes astral contact scroll
 raging echoes nexus scroll
 raging echoes portal scroll
 raging echoes dragon trophy
@@ -17579,7 +17579,7 @@ echo ahrim's robeskirt 0
 noted echo ahrim's ornament kit
 noted echo home teleport scroll
 noted raging echoes death scroll
-noted raging echoes npc contact scroll
+noted raging echoes astral contact scroll
 noted raging echoes nexus scroll
 raging echoes rug
 noted raging echoes rug
@@ -19717,6 +19717,156 @@ stymphike
 venator
 ancient sceptre (l) (broken)
 ancient sceptre (l) (mangled)
+letvek in a bucket
+wyrmscraig goat hoof
+noble robe top
+noted noble robe top
+noble robe top
+noted noble robe top
+noble robe top
+noted noble robe top
+noble robe top
+noted noble robe top
+noble robe top
+noted noble robe top
+noble robe top
+noted noble robe top
+noble robe top
+noted noble robe top
+wyrmscraig noble skirt
+noted wyrmscraig noble skirt
+wyrmscraig noble skirt
+noted wyrmscraig noble skirt
+wyrmscraig noble skirt
+noted wyrmscraig noble skirt
+wyrmscraig noble skirt
+noted wyrmscraig noble skirt
+wyrmscraig noble skirt
+noted wyrmscraig noble skirt
+wyrmscraig noble skirt
+noted wyrmscraig noble skirt
+wyrmscraig noble skirt
+noted wyrmscraig noble skirt
+wyrmscraig shoes
+noted wyrmscraig shoes
+wyrmscraig boots
+noted wyrmscraig boots
+wyrmscraig villager robe top
+noted wyrmscraig villager robe top
+wyrmscraig villager robe top
+noted wyrmscraig villager robe top
+wyrmscraig villager robe top
+noted wyrmscraig villager robe top
+wyrmscraig villager robe top
+noted wyrmscraig villager robe top
+wyrmscraig villager robe top
+noted wyrmscraig villager robe top
+wyrmscraig villager robe top
+noted wyrmscraig villager robe top
+wyrmscraig villager robe top
+noted wyrmscraig villager robe top
+wyrmscraig villager robe top
+noted wyrmscraig villager robe top
+wyrmscraig villager robe bottom
+noted wyrmscraig villager robe bottom
+wyrmscraig villager robe bottom
+noted wyrmscraig villager robe bottom
+wyrmscraig villager robe bottom
+noted wyrmscraig villager robe bottom
+wyrmscraig villager robe bottom
+noted wyrmscraig villager robe bottom
+wyrmscraig villager robe bottom
+noted wyrmscraig villager robe bottom
+wyrmscraig villager robe bottom
+noted wyrmscraig villager robe bottom
+wyrmscraig villager robe bottom
+noted wyrmscraig villager robe bottom
+wyrmscraig villager robe bottom
+noted wyrmscraig villager robe bottom
+wyrmscraig villager robe bottom
+noted wyrmscraig villager robe bottom
+wyrmscraig villager robe bottom
+noted wyrmscraig villager robe bottom
+wyrmscraig villager robe bottom
+noted wyrmscraig villager robe bottom
+wyrmscraig villager robe bottom
+noted wyrmscraig villager robe bottom
+wyrmscraig villager robe bottom
+noted wyrmscraig villager robe bottom
+wyrmscraig villager robe bottom
+noted wyrmscraig villager robe bottom
+wyrmscraig villager robe top
+noted wyrmscraig villager robe top
+wyrmscraig villager robe top
+noted wyrmscraig villager robe top
+wyrmscraig villager robe top
+noted wyrmscraig villager robe top
+wyrmscraig villager robe top
+noted wyrmscraig villager robe top
+wyrmscraig villager robe top
+noted wyrmscraig villager robe top
+wyrmscraig villager robe top
+noted wyrmscraig villager robe top
+wyrmscraig villager robe top
+noted wyrmscraig villager robe top
+wyrmscraig villager skirt
+noted wyrmscraig villager skirt
+wyrmscraig villager skirt
+noted wyrmscraig villager skirt
+wyrmscraig villager skirt
+noted wyrmscraig villager skirt
+wyrmscraig villager skirt
+noted wyrmscraig villager skirt
+wyrmscraig villager skirt
+noted wyrmscraig villager skirt
+wyrmscraig villager skirt
+noted wyrmscraig villager skirt
+wyrmscraig villager skirt
+noted wyrmscraig villager skirt
+wyrmscraig villager work skirt
+noted wyrmscraig villager work skirt
+wyrmscraig villager work skirt
+noted wyrmscraig villager work skirt
+wyrmscraig villager work skirt
+noted wyrmscraig villager work skirt
+wyrmscraig villager work skirt
+noted wyrmscraig villager work skirt
+wyrmscraig villager work skirt
+noted wyrmscraig villager work skirt
+wyrmscraig villager work skirt
+noted wyrmscraig villager work skirt
+wyrmscraig villager work skirt
+noted wyrmscraig villager work skirt
+wyrmscraig villager work skirt
+noted wyrmscraig villager work skirt
+wooden spikes
+wyrmscraig goat fur
+noted wyrmscraig goat fur
+sunstone
+sunstone core
+jeweller's chisel
+golem crafting
+hallowfell
+noted hallowfell
+jar of light
+sunstone crystal
+ardeaglais teleport
+placeholder
+noted placeholder
+mr mcgroot
+aggy
+large hat
+worn journal
+scrawled notebook
+scorched note
+observations
+warning note
+golem primer
+ancient sunstone core
+staircase key
+dull sunstone core
+final letter
+wyrmscraig
 marrentill seed
 marrentill seed
 marrentill seed
