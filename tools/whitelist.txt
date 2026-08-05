@@ -3,7 +3,7 @@ finders/house_layout.zip
 finders/items/data/hash.txt
 finders/items/data/id.txt
 finders/items/data/item.txt
-finders/items/items.zip
+finders/items/items-imgs.zip
 finders/overheads.zip
 finders/prayer.zip
 finders/spells.zip
@@ -12,6 +12,7 @@ images/equipment.png
 images/gametab.png
 images/mm_fixed_mask.png
 images/mm_resizable_mask.png
+images/slot.png
 images/skills.zip
 jsons/consumables.json
 jsons/consumables.zip
@@ -20,6 +21,9 @@ jsons/item-definitions.zip
 jsons/monsters
 jsons/monsters.zip
 jsons/weapons.json
-map/mapdata.zip
-map/objects.zip
-map/npcs.zip
+map/zips/collision.zip
+map/zips/heightmap.zip
+map/zips/map.zip
+map/zips/objects1400.zip
+map/zips/npcs1400.zip
+map/custommaps.zip

@@ -1,6 +1,20 @@
 # wasp-assets
-Data files for WaspLib.  
-These are semi-automated cache dumps
+Data files for WaspLib / Simba 1400 (SRL-B).  
+These are semi-automated cache dumps.
+
+## Item hashes (Simba 1400 / SRL-B)
+
+`finders/items/data/hash.txt` is **FNV** item hashes for `ItemFinder` Discover / “Load from client”.
+
+They must be produced the same way the client hashes slots:
+
+1. Crop each sprite to **36×23** (drop stack-number rows)
+2. Run **CleanItemBackground** (border / shadow cleanup)
+3. FNV-hash non-zero pixels
+
+CI does this via `tools/update_items.simba`. Do **not** use CRC32 item hashes for Discover — those were the old Simba 2.0 format and will not match the client.
+
+`id.txt`, `item.txt`, and `hash.txt` must always have the **same line count** (aligned by item id).
 
 ## Sections
 - [Add assets to wasp](#add-assets-to-wasp)

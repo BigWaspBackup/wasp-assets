@@ -1,5 +1,18 @@
+(*
+  Generates finders/items/data/hash.txt for Simba 1400 / SRL-B ItemFinder.
+
+  Must match Equipment.Discover / ItemFinder.CleanItemBitmap:
+    1) Crop PNG to 36x23 (drop stack-number rows 0..8)
+    2) ClearItemBackground (border/shadow cleanup)
+    3) FNV-1a GetHash over non-zero pixels
+
+  Simba 2.0 runner is fine; CRC32 / items.bin / data/1400 dual paths removed.
+*)
 const
   SINGLE_ITEM: String = '';
+  RS_ITEM_BORDER = $010000;
+  RS_ITEM_SHADOW = $202030;
+
 var
   PATH: String = {$MACRO DIR} + '..' + PATH_SEP + 'finders' + PATH_SEP + 'items' + PATH_SEP;
   RESET: Boolean = True;
@@ -24,7 +37,7 @@ begin
   pixels := Self.GetColors();
 
   h := $811C9DC5;
-  for i:=0 to High(pixels) do
+  for i := 0 to High(pixels) do
   begin
     if pixels[i] = $0 then
       Continue;
@@ -32,13 +45,241 @@ begin
   end;
 
   str := LowerCase(IntToHex(h, 16));
-  Result := str.CopyRange(Length(str)-8, Length(str));
+  // Match SRL-B ItemFinder: SubString(Length-8, Length) -> last 9 hex chars in practice
+  Result := str.CopyRange(Length(str) - 8, Length(str));
+end;
+
+function CropItemSprite(src: TImage): TImage;
+var
+  x, y: Int32;
+begin
+  if (src.Width < 36) or (src.Height < 32) then
+    raise 'Item sprite too small for crop: ' + ToStr(src.Width) + 'x' + ToStr(src.Height);
+
+  Result := new TImage(36, 23);
+  for y := 0 to 22 do
+    for x := 0 to 35 do
+      Result.SetPixel(x, y, src.GetPixel(x, y + 9));
+end;
+
+// Port of SRL-B ItemFinder.CleanItemBitmap / hash-generator ClearItemBackground.
+function ClearItemBackground(img: TImage): Boolean;
+const
+  NOTED_TPA: TPointArray = [
+    [2,0],[2,1],[2,2],[2,3],[3,4],[4,4],[2,5],[1,6],[1,7],[1,8],[1,9],[1,10],[1,11],
+    [1,12],[1,13],[1,14],[1,15],[1,16],[1,17],[2,18],[3,18],[4,18],[5,18],[6,18],[7,18],
+    [8,18],[9,18],[10,18],[11,18],[12,19],[13,19],[14,19],[15,19],[16,19],[17,19],[18,19],
+    [19,20],[20,20],[21,20],[22,20],[23,20],[24,20],[25,20],[26,20],[27,20],[28,19],[28,18],
+    [28,17],[28,16],[28,15],[28,14],[28,13],[28,12],[28,11],[27,10],[27,9],[27,8],[28,7],
+    [28,6],[28,5],[28,4],[28,3],[28,2],[29,1],[29,0]
+  ];
+var
+  border, shadow, tpa, item, corners, bg, queue: TPointArray;
+  atpa: T2DPointArray;
+  count, x, y, i, q, w, h: Int32;
+  p, n: TPoint;
+  b: TBox;
+  matrix: T2DIntArray;
+  noted: Boolean;
+  visited: array of array of Boolean;
+begin
+  w := img.Width;
+  h := img.Height;
+  border := img.FindColor(RS_ITEM_BORDER, 0);
+  if Length(border) = 0 then
+    Exit;
+
+  Result := True;
+
+  shadow := img.FindColor(RS_ITEM_SHADOW, 0);
+  tpa := img.FindColor($333333, 0);
+  if Length(tpa) > 0 then
+    shadow += tpa;
+
+  SetLength(matrix, h);
+  for y := 0 to h - 1 do
+  begin
+    SetLength(matrix[y], w);
+    for x := 0 to w - 1 do
+      matrix[y][x] := img.GetPixel(x, y);
+  end;
+
+  corners := [[0, h - 1], [w - 1, h - 1]];
+
+  // Connected components of non-border touching bottom corners = background.
+  SetLength(visited, h);
+  for y := 0 to h - 1 do
+  begin
+    SetLength(visited[y], w);
+    for x := 0 to w - 1 do
+      visited[y][x] := False;
+  end;
+
+  tpa := border.Invert([0, 0, w - 1, h - 1]);
+  for p in tpa do
+  begin
+    if visited[p.Y][p.X] then
+      Continue;
+    if matrix[p.Y][p.X] = RS_ITEM_BORDER then
+      Continue;
+
+    queue := [p];
+    visited[p.Y][p.X] := True;
+    i := 0;
+    while i <= High(queue) do
+    begin
+      n := queue[i];
+      Inc(i);
+      for q := 0 to 3 do
+      begin
+        case q of
+          0: p := [n.X + 1, n.Y];
+          1: p := [n.X - 1, n.Y];
+          2: p := [n.X, n.Y + 1];
+          else p := [n.X, n.Y - 1];
+        end;
+        if (p.X < 0) or (p.Y < 0) or (p.X >= w) or (p.Y >= h) then
+          Continue;
+        if visited[p.Y][p.X] then
+          Continue;
+        if matrix[p.Y][p.X] = RS_ITEM_BORDER then
+          Continue;
+        visited[p.Y][p.X] := True;
+        queue += p;
+      end;
+    end;
+
+    if queue.Contains(corners[0]) or queue.Contains(corners[1]) then
+      bg += queue
+    else
+      atpa += queue;
+  end;
+
+  noted := True;
+  for i := 0 to High(NOTED_TPA) do
+    if matrix[NOTED_TPA[i].Y][NOTED_TPA[i].X] <> RS_ITEM_BORDER then
+    begin
+      noted := False;
+      Break;
+    end;
+
+  if noted then
+    b := border.Bounds().Expand(-2)
+  else
+    b := border.Bounds();
+
+  item := [];
+  for y := b.Y1 to b.Y2 do
+  begin
+    count := 0;
+    tpa := [];
+    for x := b.X1 to b.X2 do
+    begin
+      case matrix[y][x] of
+        RS_ITEM_BORDER: if Inc(count) > 2 then Continue(2);
+        else if count = 1 then tpa += [x, y];
+      end;
+    end;
+    if (count = 2) and (Length(tpa) > 3) then
+      item += tpa;
+  end;
+
+  for x := b.X1 to b.X2 do
+  begin
+    count := 0;
+    tpa := [];
+    for y := b.Y1 to b.Y2 do
+    begin
+      case matrix[y][x] of
+        RS_ITEM_BORDER: if Inc(count) > 2 then Continue(2);
+        else if count = 1 then tpa += [x, y];
+      end;
+    end;
+    if (count = 2) and (Length(tpa) > 3) then
+      item += tpa;
+  end;
+
+  for p in item do
+    matrix[p.Y][p.X] := $00FFFF;
+  item := [];
+
+  for y := b.Y2 downto b.Y1 do
+  begin
+    count := 0;
+    tpa := [];
+    for x := b.X2 downto b.X1 do
+    begin
+      case matrix[y][x] of
+        RS_ITEM_BORDER: if Inc(count) > 2 then Continue(2);
+        $00FFFF:
+          case count of
+            0: matrix[y][x] := $0;
+            1: Inc(count);
+            2: Continue(2);
+          end;
+        else if count = 1 then tpa += [x, y];
+      end;
+    end;
+    if (count = 2) and (Length(tpa) > 3) then
+      item += tpa;
+  end;
+
+  for x := b.X2 downto b.X1 do
+  begin
+    count := 0;
+    tpa := [];
+    for y := b.Y2 downto b.Y1 do
+    begin
+      case matrix[y][x] of
+        RS_ITEM_BORDER: if Inc(count) > 2 then Continue(2);
+        $00FFFF:
+          case count of
+            0: matrix[y][x] := $0;
+            1: Inc(count);
+            2: Continue(2);
+          end;
+        else if count = 1 then tpa += [x, y];
+      end;
+    end;
+    if (count = 2) and (Length(tpa) > 3) then
+      item += tpa;
+  end;
+
+  for p in shadow do
+  begin
+    p := [p.X - 1, p.Y - 1];
+    if (p.X >= b.X1) and (p.Y >= b.Y1) and (p.X <= b.X2) and (p.Y <= b.Y2) then
+      item += p;
+  end;
+
+  for p in item do
+    matrix[p.Y][p.X] := $00FFFF;
+
+  item := [];
+  for y := 0 to h - 1 do
+    for x := 0 to w - 1 do
+      if matrix[y][x] = $00FFFF then
+        item += [x, y];
+
+  item += border;
+
+  for tpa in atpa do
+    for p in item do
+      if tpa.Contains(p) then
+      begin
+        item += tpa;
+        Continue(2);
+      end;
+
+  tpa := item.Invert([0, 0, w - 1, h - 1]);
+  img.DrawColor := $0;
+  img.DrawTPA(tpa + bg);
 end;
 
 type
   TItemData = record
     ItemID: Int32;
-    BorderHash, ItemHash, ItemHash1400: String;
+    ItemHash: String;
   end;
 
   TItemDataArray = array of TItemData;
@@ -52,18 +293,17 @@ procedure PrepareResources(out files: TStringArray);
 begin
   if RESET and DirExists(PATH + 'items-imgs') then
   begin
-    WriteLn('Resetting resources.');
-    DirDelete(PATH + 'items', False);
-    DirDelete(PATH + 'masks', False);
+    WriteLn('Resetting extracted items-imgs.');
+    DirDelete(PATH + 'items-imgs', False);
   end;
 
   if FileExists(PATH + 'data' + PATH_SEP + 'hash.txt') then
     if not FileDelete(PATH + 'data' + PATH_SEP + 'hash.txt') then
       raise 'Couldn''t delete ' + PATH + 'data' + PATH_SEP + 'hash.txt';
 
-  if FileExists(PATH + 'data' + PATH_SEP + '1400' + PATH_SEP + 'hash.txt') then
-    if not FileDelete(PATH + 'data' + PATH_SEP + '1400' + PATH_SEP + 'hash.txt') then
-      raise 'Couldn''t delete ' + PATH + 'data' + PATH_SEP + '1400' + PATH_SEP + 'hash.txt';
+  // Remove legacy Simba 2.0 / dual 1400 hash path if present
+  if DirExists(PATH + 'data' + PATH_SEP + '1400') then
+    DirDelete(PATH + 'data' + PATH_SEP + '1400', False);
 
   files := DirList(PATH + 'items-imgs', True);
   if files = [] then
@@ -74,106 +314,90 @@ begin
     files := DirList(PATH + 'items-imgs', True);
   end;
 
-  DirCreate(PATH + 'masks');
-
-  WriteLn('Preparation done.');
+  WriteLn('Preparation done. PNG count: ', Length(files));
 end;
 
 var
   ITEM_DATA_ARRAY: TItemDataArray;
-  UNIQUE_ITEM_DATA_ARRAY: TStringArray;
-  UNIQUE_BORDER_DATA_ARRAY: TStringArray;
+  UNIQUE_HASHES: TStringArray;
 
 function ProcessItemImage(filename: String): TItemData;
 var
-  img, border, mask: TImage;
-  tpa: TPointArray;
+  src, img: TImage;
 begin
   if SINGLE_ITEM <> '' then
-    if not filename.EndsWith(SINGLE_ITEM + '.png') then Exit;
+    if not filename.EndsWith(SINGLE_ITEM + '.png') then
+      Exit;
 
-  img := new TImage(filename);
+  if not filename.EndsWith('.png') then
+    Exit;
 
-  img.FillWithAlpha($FF);        //ensure there's no weird alphas.
-  img.ReplaceColor($202030, $0); //remove the item shadow
+  src := new TImage(filename);
+  src.FillWithAlpha($FF);
 
-  //find border minus stack number space
-  tpa := img.FindColor($010000, 0, [0, 9, 35, 31]);
+  img := CropItemSprite(src);
+  ClearItemBackground(img);
 
-  img.DrawColor := $0;
-  img.DrawBoxFilled([0,0,35,8]);
-
-  border := new TImage(36, 32);
-  border.DrawColor := $FFFFFF;
-  border.DrawTPA(tpa);
-
-  Result.ItemID       := PathExtractNameWithoutExt(filename).ExtractInteger();
-  Result.BorderHash   := HashData(EHashAlgo.CRC32, border.Data, 4608); //h * w * 4 = 4608
-  Result.ItemHash     := HashData(EHashAlgo.CRC32, img.Data, 4608);
-  Result.ItemHash1400 := img.GetHash();
+  Result.ItemID := PathExtractNameWithoutExt(filename).ExtractInteger();
+  Result.ItemHash := img.GetHash();
 
   if SINGLE_ITEM <> '' then
   begin
-    WriteLn('Item:     ', Result.ItemID);
-    WriteLn('Border:   ', Result.BorderHash);
-    WriteLn('Hash:     ', Result.ItemHash);
-    WriteLn('Hash1400: ', Result.ItemHash1400);
+    WriteLn('Item: ', Result.ItemID);
+    WriteLn('Hash: ', Result.ItemHash);
     img.Show();
   end;
 
+  if Result.ItemHash = '' then
+    raise 'Empty hash for item id ' + ToStr(Result.ItemID);
+
   ITEM_DATA_ARRAY += Result;
 
-  if not UNIQUE_ITEM_DATA_ARRAY.Contains(Result.ItemHash) then
-    UNIQUE_ITEM_DATA_ARRAY += Result.ItemHash;
-
-  if UNIQUE_BORDER_DATA_ARRAY.Contains(Result.BorderHash) then
-    Exit;
-
-  UNIQUE_BORDER_DATA_ARRAY += Result.BorderHash;
-
-  mask := new TImage(36, 32);
-  mask.DrawColor := $FFFFFF;
-  mask.DrawTPA(img.FindColor($0, 0, [0, 9, 35, 31]).Invert());
-
-  mask.Save(PATH + 'masks' + PATH_SEP + Result.BorderHash + '.bmp', True);
+  if not UNIQUE_HASHES.Contains(Result.ItemHash) then
+    UNIQUE_HASHES += Result.ItemHash;
 end;
 
 procedure WriteFiles();
 var
   itemData: TItemData;
-  hashes, hashes1400: String;
-  writer: TResourceWriter;
+  hashes: String;
+  idLines, itemLines, hashLines: TStringArray;
+  i, idCount, itemCount: Int32;
 begin
+  idLines := FileReadLines(PATH + 'data' + PATH_SEP + 'id.txt');
+  itemLines := FileReadLines(PATH + 'data' + PATH_SEP + 'item.txt');
+  idCount := Length(idLines);
+  itemCount := Length(itemLines);
+
+  if idCount <= 0 then
+    raise 'id.txt is empty';
+  if idCount <> itemCount then
+    raise 'id.txt (' + ToStr(idCount) + ') and item.txt (' + ToStr(itemCount) + ') line counts differ';
+  if Length(ITEM_DATA_ARRAY) <> idCount then
+    raise 'Hashed ' + ToStr(Length(ITEM_DATA_ARRAY)) + ' sprites but id.txt has ' +
+      ToStr(idCount) + ' rows — refusing to write misaligned hash.txt';
+
+  // After Sort by ItemID, rows must match id.txt order (numeric ascending).
+  for i := 0 to High(idLines) do
+    if ToStr(ITEM_DATA_ARRAY[i].ItemID) <> idLines[i] then
+      raise 'After sort, item id ' + ToStr(ITEM_DATA_ARRAY[i].ItemID) +
+        ' at row ' + ToStr(i) + ' != id.txt "' + idLines[i] + '"';
+
+  hashes := '';
   for itemData in ITEM_DATA_ARRAY do
-  begin
     hashes += itemData.ItemHash + LINE_SEP;
-    hashes1400 += itemData.ItemHash1400 + LINE_SEP;
-  end;
 
   FileWrite(PATH + 'data' + PATH_SEP + 'hash.txt', hashes);
-  FileWrite(PATH + 'data' +PATH_SEP + '1400' + PATH_SEP + 'hash.txt', hashes1400);
 
-  if FileExists(PATH + 'items.bin') then
-    if not FileDelete(PATH + 'items.bin') then
-      raise 'Couldn''t delete ' + PATH + 'items.bin';
+  hashLines := FileReadLines(PATH + 'data' + PATH_SEP + 'hash.txt');
+  if Length(hashLines) <> Length(idLines) then
+    raise 'Wrote hash.txt with ' + ToStr(Length(hashLines)) + ' lines but id.txt has ' +
+      ToStr(Length(idLines));
 
-  writer := new TResourceWriter();
-  writer.AddImages(PATH + 'items-imgs', '*.png', False);
-  writer.AddImages(PATH + 'masks', '*.bmp', False);
-  writer.Save(PATH + 'items.bin');
-
-  if FileExists(PATH + 'items.zip') then
-    if not FileDelete(PATH + 'items.zip') then
-      raise 'Couldn''t delete ' + PATH + 'items.zip';
-
-  if not ZipFiles(PATH + 'items.zip', [PATH + 'items.bin']) then
-    raise 'Couldn''t zip ' + PATH + 'items.bin';
+  WriteLn('Wrote hash.txt with ', Length(hashLines), ' FNV hashes (Discover-compatible).');
 
   if CLEANUP then
-  begin
     DirDelete(PATH + 'items-imgs', False);
-    DirDelete(PATH + 'masks', False);
-  end;
 end;
 
 var
@@ -189,11 +413,10 @@ begin
     ProcessItemImage(filename);
 
   WriteLn('Total items: ', Length(ITEM_DATA_ARRAY));
-  WriteLn('Total unique items: ', Length(UNIQUE_ITEM_DATA_ARRAY));
-  WriteLn('Total unique borders: ', Length(UNIQUE_BORDER_DATA_ARRAY));
+  WriteLn('Total unique hashes: ', Length(UNIQUE_HASHES));
 
-  WriteLn('Sorting data.');
+  WriteLn('Sorting data by item id.');
   ITEM_DATA_ARRAY.Sort(@CompareItemData);
-  WriteLn('Saving files.');
+  WriteLn('Saving hash.txt.');
   WriteFiles();
 end.

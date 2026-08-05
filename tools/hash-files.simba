@@ -17,6 +17,7 @@ begin
   for i := 0 to High(files) do
   begin
     if files[i] = 'hashes.json' then Continue;
+    if files[i] = '' then Continue;
     hash := HashFile(EHashAlgo.CRC32, path + files[i]);
     WriteLn('File: ', files[i], ' Hash: ', hash);
     json.AddString(files[i], hash);
